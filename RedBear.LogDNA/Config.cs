@@ -84,13 +84,13 @@ namespace RedBear.LogDNA
         public string AllTags => Tags.Count > 0 ? string.Join(",", Tags) : null;
 
         /// <summary>
-        /// Gets the name of the machine.
+        /// Gets the name of the host. By default, this is the machine name, but it can be overridden.
         /// </summary>
         /// <value>
-        /// The name of the machine.
+        /// The host name.
         /// </value>
         [JsonProperty("hostname")]
-        public string HostName => Environment.MachineName;
+        public string HostName { get; set; }
 
         /// <summary>
         /// Gets the MAC address.
@@ -231,6 +231,7 @@ namespace RedBear.LogDNA
             FlushLimit = 5000;
             BufferLimit = 10000;
             Tags = new List<string>();
+            HostName = Environment.MachineName;
         }
     }
 }
