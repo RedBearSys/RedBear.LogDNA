@@ -2,14 +2,14 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>RedBear.LogDNA</id>
-        <version>1.0.2</version>
-        <title>NLog Target for LogDNA</title>
+        <version>1.0.4</version>
+        <title>LogDNA Client</title>
         <authors>Red Bear Systems Limited</authors>
         <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
         <projectUrl>https://github.com/RedBearSys/RedBear.LogDNA</projectUrl>
         <iconUrl>https://avatars3.githubusercontent.com/u/17988342?v=3&amp;amp;s=200</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>This is an NLog target for LogDNA.</description>
+        <description>This is a .NET client for the LogDNA service.</description>
         <dependencies>
             <group targetFramework=".NETFramework4.5">
                 <dependency id="Newtonsoft.Json" version="8.0.3" />

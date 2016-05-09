@@ -212,9 +212,27 @@ namespace RedBear.LogDNA
         /// Sends the specified message directly to the websocket.
         /// </summary>
         /// <param name="message">The message.</param>
-        public static void Send(string message)
+        /// <returns>True if the message was transmitted successfully.</returns>
+        public static bool Send(string message)
         {
-            _ws.Send(message);
+            if (_ws.ReadyState == WebSocketState.Open)
+            {
+                try
+                {
+                    _ws.Send(message);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine("Exception sending message..");
+                    Trace.WriteLine(ex.ToString());
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>

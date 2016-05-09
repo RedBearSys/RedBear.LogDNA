@@ -99,8 +99,8 @@ namespace RedBear.LogDNA
 
                     try
                     {
-                        ApiClient.Send(JsonConvert.SerializeObject(this));
-                        _sending.Clear();
+                        var result = ApiClient.Send(JsonConvert.SerializeObject(this));
+                        if (result) _sending.Clear();
                     }
                     catch (Exception)
                     {
