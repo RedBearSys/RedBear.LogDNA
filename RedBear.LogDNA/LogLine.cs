@@ -54,7 +54,7 @@ namespace RedBear.LogDNA
         {
             Timestamp = DateTime.UtcNow.ToUnixTimestamp();
             Content = content.Length > 32000 ? content.Substring(0, 32000) : content;
-            Filename = $"{ApiClient.Config.ApplicationName}: {logName}";
+            Filename = logName;
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace RedBear.LogDNA
         {
             Timestamp = utc.ToUnixTimestamp();
             Content = content.Length > 32000 ? content.Substring(0, 32000) : content;
-            Filename = $"{ApiClient.Config.ApplicationName}: {logName}";
+            Filename = logName;
         }
     }
 }
