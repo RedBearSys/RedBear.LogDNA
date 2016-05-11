@@ -90,7 +90,7 @@ namespace RedBear.LogDNA
 
                 _ws =
                     new WebSocket(
-                        $"{protocol}://{Config.LogServer}:{Config.LogServerPort}/?auth_token={WebUtility.UrlEncode(Config.AuthToken)}&timestamp={DateTime.Now.ToUnixTimestamp()}&compress=1&tailmode=&transport=")
+                        $"{protocol}://{Config.LogServer}:{Config.LogServerPort}/?auth_token={WebUtility.UrlEncode(Config.AuthToken)}&timestamp={DateTime.Now.ToJavaTimestamp()}&compress=1&tailmode=&transport=")
                     {
                         Compression = CompressionMethod.Deflate
                     };

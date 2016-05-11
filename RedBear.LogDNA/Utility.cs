@@ -16,14 +16,13 @@ namespace RedBear.LogDNA
         }
 
         /// <summary>
-        /// Converts the DateTime to a UNIX timestamp in milliseconds.
+        /// Converts the DateTime to a Java timestamp in milliseconds.
         /// </summary>
         /// <param name="time">The time.</param>
-        /// <returns>The UNIX timestamp repersentation of the DateTime in milliseconds.</returns>
-        public static long ToUnixTimestampMs(this DateTime time)
+        /// <returns>The Java timestamp repersentation of the DateTime in milliseconds.</returns>
+        public static long ToJavaTimestamp(this DateTime time)
         {
-            var t = time - new DateTime(1970, 1, 1);
-            return (long)t.TotalMilliseconds;
+            return ((long) time.ToUnixTimestamp())*1000;
         }
 
     }

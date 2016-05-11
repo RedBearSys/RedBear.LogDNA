@@ -46,13 +46,13 @@ namespace RedBear.LogDNA
         public string Filename { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LogLine"/> class using the current UTC date and time as the timestamp.
+        /// Initializes a new instance of the <see cref="LogLine"/> class using the current date and time as the timestamp.
         /// </summary>
         /// <param name="logName">Name of the log. This will be used as the 'filename'.</param>
         /// <param name="content">The content of the log line.</param>
         public LogLine(string logName, string content)
         {
-            Timestamp = DateTime.UtcNow.ToUnixTimestamp();
+            Timestamp = DateTime.Now.ToJavaTimestamp();
             Content = content.Length > 32000 ? content.Substring(0, 32000) : content;
             Filename = logName;
         }
@@ -62,10 +62,10 @@ namespace RedBear.LogDNA
         /// </summary>
         /// <param name="logName">Name of the log. This will be used as the 'filename'.</param>
         /// <param name="content">The content of the log line.</param>
-        /// <param name="utc">The UTC date and time to associate with this log line.</param>
-        public LogLine(string logName, string content, DateTime utc)
+        /// <param name="now">The date and time to associate with this log line.</param>
+        public LogLine(string logName, string content, DateTime now)
         {
-            Timestamp = utc.ToUnixTimestampMs();
+            Timestamp = now.ToJavaTimestamp();
             Content = content.Length > 32000 ? content.Substring(0, 32000) : content;
             Filename = logName;
         }
