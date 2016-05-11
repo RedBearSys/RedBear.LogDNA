@@ -89,7 +89,7 @@ namespace RedBear.LogDNA
         {
             Trace.WriteLine("Flushing..");
 
-            if (ApiClient.Active && !_flushing && Running)
+            if (ApiClient.Active && !_flushing && Running && _buffer.Count > 0)
             {
                 lock (FlushLock)
                 {

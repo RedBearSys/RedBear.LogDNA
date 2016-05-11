@@ -14,5 +14,17 @@ namespace RedBear.LogDNA
             var t = time - new DateTime(1970, 1, 1);
             return (int)t.TotalSeconds;
         }
+
+        /// <summary>
+        /// Converts the DateTime to a UNIX timestamp in milliseconds.
+        /// </summary>
+        /// <param name="time">The time.</param>
+        /// <returns>The UNIX timestamp repersentation of the DateTime in milliseconds.</returns>
+        public static long ToUnixTimestampMs(this DateTime time)
+        {
+            var t = time - new DateTime(1970, 1, 1);
+            return (long)t.TotalMilliseconds;
+        }
+
     }
 }

@@ -25,7 +25,7 @@ namespace RedBear.LogDNA
         /// The timestamp.
         /// </value>
         [JsonProperty("t")]
-        public int Timestamp { get; set; }
+        public long Timestamp { get; set; }
 
         /// <summary>
         /// Gets or sets the content of the line.
@@ -65,7 +65,7 @@ namespace RedBear.LogDNA
         /// <param name="utc">The UTC date and time to associate with this log line.</param>
         public LogLine(string logName, string content, DateTime utc)
         {
-            Timestamp = utc.ToUnixTimestamp();
+            Timestamp = utc.ToUnixTimestampMs();
             Content = content.Length > 32000 ? content.Substring(0, 32000) : content;
             Filename = logName;
         }
