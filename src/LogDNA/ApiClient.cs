@@ -1,11 +1,13 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using RedBear.LogDNA.Properties;
+using System;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using RedBear.LogDNA.Properties;
 using WebSocketSharp;
 
 namespace RedBear.LogDNA
@@ -13,33 +15,35 @@ namespace RedBear.LogDNA
     /// <summary>
     /// Main class for communicating with the LogDNA servers.
     /// </summary>
-    public static class ApiClient
+    public class ApiClient : IApiClient
     {
-        public static Config Config;
-        private static JObject _result;
-        private static WebSocket _ws;
-        public static bool Active;
-        private static int _connectionAttempt;
-        public static LogLineBuffer Buffer;
+        public Config Config;
+        private JObject _result;
+        private WebSocket _ws;
+        private int _connectionAttempt;
+        
+        public LogLineBuffer Buffer { get; set; }
+        public bool Active { get; set; }
 
+        /// <inheritdoc />
         /// <summary>
         /// Connects to the LogDNA servers using the specified configuration.
         /// </summary>
         /// <param name="config">The configuration.</param>
         /// <returns></returns>
-        public static async Task Connect(Config config)
+        public async Task ConnectAsync(Config config)
         {
             Config = config;
-            Buffer = new LogLineBuffer();
+            Buffer = new LogLineBuffer(this);
             var url = new Uri("https://api.logdna.com/authenticate/");
-            var status = await PostData(url, Config);
+            var status = await PostDataAsync(url, Config);
 
             if (status == HttpStatusCode.OK && _result?["apiserver"] != null && _result["apiserver"].ToString() != url.Host)
             {
                 if (_result["ssl"].ToString() == "true")
                 {
                     url = new Uri($"https://{_result["apiserver"]}/authenticate/");
-                    status = await PostData(url, Config);
+                    status = await PostDataAsync(url, Config);
                 }
             }
 
@@ -48,7 +52,7 @@ namespace RedBear.LogDNA
                 if (_result != null) Trace.WriteLine(_result.ToString());
                 Trace.WriteLine("Auth failed; retry after a delay.");
                 await Task.Delay(Config.AuthFailDelay);
-                await Connect(Config);
+                await ConnectAsync(Config);
                 return;
             }
 
@@ -66,7 +70,7 @@ namespace RedBear.LogDNA
         /// <summary>
         /// Connects to the LogDNA websocket server.
         /// </summary>
-        private static void ConnectSocket()
+        private void ConnectSocket()
         {
             try
             {
@@ -109,10 +113,11 @@ namespace RedBear.LogDNA
             }
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Disconnects the client from the LogDNA servers.
         /// </summary>
-        public static void Disconnect()
+        public void Disconnect()
         {
             Trace.WriteLine("Disconnecting..");
             Flush();
@@ -121,7 +126,7 @@ namespace RedBear.LogDNA
             _ws?.Close();
         }
 
-        private static void Ws_OnMessage(object sender, MessageEventArgs e)
+        private void Ws_OnMessage(object sender, MessageEventArgs e)
         {
             Trace.WriteLine("Message received..");
 
@@ -135,13 +140,13 @@ namespace RedBear.LogDNA
                         // Do Nothing - this library doesn't allow auto-updating.
                         break;
                     case "r":
-                        Connect(Config).Wait();
+                        ConnectAsync(Config).Wait();
                         break;
                     default:
                         throw new LogDNAException(Resources.UnknownCommand);
                 }
             }
-            catch (Newtonsoft.Json.JsonException ex)
+            catch (JsonException ex)
             {
                 Trace.WriteLine("Deserialisation exception..");
                 Trace.WriteLine(ex.ToString());
@@ -149,7 +154,7 @@ namespace RedBear.LogDNA
             }
         }
 
-        private static void Reconnect()
+        private void Reconnect()
         {
             Trace.WriteLine("Reconnecting..");
 
@@ -160,7 +165,7 @@ namespace RedBear.LogDNA
             ConnectSocket();
         }
 
-        private static void Ws_OnError(object sender, ErrorEventArgs e)
+        private void Ws_OnError(object sender, ErrorEventArgs e)
         {
             Trace.WriteLine($"Error received: {e.Message}");
             if (Active)
@@ -169,7 +174,7 @@ namespace RedBear.LogDNA
             }
         }
 
-        private static void Ws_OnClose(object sender, CloseEventArgs e)
+        private void Ws_OnClose(object sender, CloseEventArgs e)
         {
             Trace.WriteLine("Connection closed..");
             if (Active)
@@ -178,7 +183,7 @@ namespace RedBear.LogDNA
             }
         }
 
-        private static void Ws_OnOpen(object sender, EventArgs e)
+        private void Ws_OnOpen(object sender, EventArgs e)
         {
             Trace.WriteLine("Connecting successfully..");
             Active = true;
@@ -186,18 +191,19 @@ namespace RedBear.LogDNA
             _connectionAttempt = 0;
         }
 
-        private static async Task<HttpStatusCode> PostData(Uri url, Config config)
+        private async Task<HttpStatusCode> PostDataAsync(Uri url, Config config)
         {
             using (var client = new HttpClient())
             {
                 client.BaseAddress = url;
                 client.DefaultRequestHeaders.Add("User-Agent", config.UserAgent);
 
-                var response = await client.PostAsJsonAsync(config.Key, config);
+                var response = await client.PostAsync(config.Key,
+                    new StringContent(JsonConvert.SerializeObject(config), Encoding.UTF8, "application/json"));
 
                 if (response.IsSuccessStatusCode)
                 {
-                    _result = await response.Content.ReadAsAsync<JObject>();
+                    _result = JObject.Parse(await response.Content.ReadAsStringAsync());
                 }
                 else
                 {
@@ -207,12 +213,13 @@ namespace RedBear.LogDNA
             }
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Sends the specified message directly to the websocket.
         /// </summary>
         /// <param name="message">The message.</param>
         /// <returns>True if the message was transmitted successfully.</returns>
-        public static bool Send(string message)
+        public bool Send(string message)
         {
             if (_ws.ReadyState == WebSocketState.Open)
             {
@@ -234,20 +241,22 @@ namespace RedBear.LogDNA
             }
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Adds a LogLine to the buffer.
         /// </summary>
         /// <param name="line">The line.</param>
-        public static void AddLine(LogLine line)
+        public void AddLine(LogLine line)
         {
             Buffer.AddLine(line);
         }
 
 
+        /// <inheritdoc />
         /// <summary>
         /// Flushes the log buffer.
         /// </summary>
-        public static void Flush()
+        public void Flush()
         {
             Buffer.Flush();
         }

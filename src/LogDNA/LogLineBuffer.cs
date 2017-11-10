@@ -12,6 +12,18 @@ namespace RedBear.LogDNA
     [JsonObject(MemberSerialization.OptIn)]
     public class LogLineBuffer
     {
+        private readonly ApiClient _client;
+
+        public LogLineBuffer(ApiClient client)
+        {
+            _client = client;
+
+            _buffer = new List<LogLine>();
+            var timer = new Timer(_client.Config.FlushInterval);
+            timer.Elapsed += _timer_Elapsed;
+            timer.Start();
+        }
+
         private readonly List<LogLine> _buffer;
         private bool _flushing;
         private readonly List<LogLine> _sending = new List<LogLine>();
@@ -44,14 +56,6 @@ namespace RedBear.LogDNA
         /// </value>
         public bool Running { get; set; }
 
-        public LogLineBuffer()
-        {
-            _buffer = new List<LogLine>();
-            var timer = new Timer(ApiClient.Config.FlushInterval);
-            timer.Elapsed += _timer_Elapsed;
-            timer.Start();
-        }
-
         private void _timer_Elapsed(object sender, ElapsedEventArgs e)
         {
             Flush();
@@ -66,7 +70,7 @@ namespace RedBear.LogDNA
             Trace.WriteLine("Adding a new line..");
             lock (LogLock)
             {
-                if (_buffer.Count + 1 > ApiClient.Config.BufferLimit)
+                if (_buffer.Count + 1 > _client.Config.BufferLimit)
                 {
                     Trace.WriteLine("Buffer reaching limit: remove earliest item..");
                     _buffer.RemoveAt(0);
@@ -74,7 +78,7 @@ namespace RedBear.LogDNA
 
                 _buffer.Add(line);
 
-                if (_buffer.Count >= ApiClient.Config.FlushLimit)
+                if (_buffer.Count >= _client.Config.FlushLimit)
                 {
                     Trace.WriteLine("Buffer has reached flush limit.");
                     Flush();
@@ -89,7 +93,7 @@ namespace RedBear.LogDNA
         {
             Trace.WriteLine("Flushing..");
 
-            if (ApiClient.Active && !_flushing && Running && _buffer.Count > 0)
+            if (_client.Active && !_flushing && Running && _buffer.Count > 0)
             {
                 lock (FlushLock)
                 {
@@ -99,7 +103,7 @@ namespace RedBear.LogDNA
 
                     try
                     {
-                        var result = ApiClient.Send(JsonConvert.SerializeObject(this));
+                        var result = _client.Send(JsonConvert.SerializeObject(this));
                         if (result) _sending.Clear();
                     }
                     catch (Exception)
