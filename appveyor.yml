@@ -1,8 +1,8 @@
-version: 1.0.{build}
 branches:
   only:
     - master
 image: Visual Studio 2017
+version: '2.0.{build}'
 install:
 - cmd: appveyor downloadfile https://dist.nuget.org/win-x86-commandline/v4.3.0/nuget.exe
 nuget:
