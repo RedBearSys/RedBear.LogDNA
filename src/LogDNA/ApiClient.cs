@@ -17,11 +17,11 @@ namespace RedBear.LogDNA
     /// </summary>
     public class ApiClient : IApiClient
     {
-        public Config Config;
         private JObject _result;
         private WebSocket _ws;
         private int _connectionAttempt;
-        
+
+        public Config Configuration { get; set; }
         public LogLineBuffer Buffer { get; set; }
         public bool Active { get; set; }
 
@@ -33,17 +33,17 @@ namespace RedBear.LogDNA
         /// <returns></returns>
         public async Task ConnectAsync(Config config)
         {
-            Config = config;
+            Configuration = config;
             Buffer = new LogLineBuffer(this);
             var url = new Uri("https://api.logdna.com/authenticate/");
-            var status = await PostDataAsync(url, Config);
+            var status = await PostDataAsync(url, Configuration);
 
             if (status == HttpStatusCode.OK && _result?["apiserver"] != null && _result["apiserver"].ToString() != url.Host)
             {
                 if (_result["ssl"].ToString() == "true")
                 {
                     url = new Uri($"https://{_result["apiserver"]}/authenticate/");
-                    status = await PostDataAsync(url, Config);
+                    status = await PostDataAsync(url, Configuration);
                 }
             }
 
@@ -51,17 +51,17 @@ namespace RedBear.LogDNA
             {
                 if (_result != null) Trace.WriteLine(_result.ToString());
                 Trace.WriteLine("Auth failed; retry after a delay.");
-                await Task.Delay(Config.AuthFailDelay);
-                await ConnectAsync(Config);
+                await Task.Delay(Configuration.AuthFailDelay);
+                await ConnectAsync(Configuration);
                 return;
             }
 
             if (_result != null)
             {
-                Config.AuthToken = _result["token"].ToString();
-                Config.LogServer = _result["server"].ToString();
-                Config.LogServerPort = _result["port"].Value<int>();
-                Config.LogServerSsl = _result["ssl"].Value<bool>();
+                Configuration.AuthToken = _result["token"].ToString();
+                Configuration.LogServer = _result["server"].ToString();
+                Configuration.LogServerPort = _result["port"].Value<int>();
+                Configuration.LogServerSsl = _result["ssl"].Value<bool>();
 
                 ConnectSocket();
             }
@@ -90,11 +90,11 @@ namespace RedBear.LogDNA
                 Active = true;
 
                 var protocol = "ws";
-                if (Config.LogServerSsl) protocol += "s";
+                if (Configuration.LogServerSsl) protocol += "s";
 
                 _ws =
                     new WebSocket(
-                        $"{protocol}://{Config.LogServer}:{Config.LogServerPort}/?auth_token={WebUtility.UrlEncode(Config.AuthToken)}&timestamp={DateTime.Now.ToJavaTimestamp()}&compress=1&tailmode=&transport=")
+                        $"{protocol}://{Configuration.LogServer}:{Configuration.LogServerPort}/?auth_token={WebUtility.UrlEncode(Configuration.AuthToken)}&timestamp={DateTime.Now.ToJavaTimestamp()}&compress=1&tailmode=&transport=")
                     {
                         Compression = CompressionMethod.Deflate
                     };
@@ -140,7 +140,7 @@ namespace RedBear.LogDNA
                         // Do Nothing - this library doesn't allow auto-updating.
                         break;
                     case "r":
-                        ConnectAsync(Config).Wait();
+                        ConnectAsync(Configuration).Wait();
                         break;
                     default:
                         throw new LogDNAException(Resources.UnknownCommand);
@@ -198,7 +198,7 @@ namespace RedBear.LogDNA
                 client.BaseAddress = url;
                 client.DefaultRequestHeaders.Add("User-Agent", config.UserAgent);
 
-                var response = await client.PostAsync(config.Key,
+                var response = await client.PostAsync(config.IngestionKey,
                     new StringContent(JsonConvert.SerializeObject(config), Encoding.UTF8, "application/json"));
 
                 if (response.IsSuccessStatusCode)

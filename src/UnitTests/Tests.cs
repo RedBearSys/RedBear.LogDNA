@@ -10,7 +10,7 @@ namespace UnitTests
         // ReSharper disable once InconsistentNaming
         public async void AppearsInLogDNA()
         {
-            var config = new Config("MyApp", "--KEY--");
+            var config = new Config("--KEY--");
 
             var client = new ApiClient();
             await client.ConnectAsync(config);

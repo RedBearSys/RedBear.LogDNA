@@ -19,7 +19,7 @@ namespace RedBear.LogDNA
             _client = client;
 
             _buffer = new List<LogLine>();
-            var timer = new Timer(_client.Config.FlushInterval);
+            var timer = new Timer(_client.Configuration.FlushInterval);
             timer.Elapsed += _timer_Elapsed;
             timer.Start();
         }
@@ -70,7 +70,7 @@ namespace RedBear.LogDNA
             Trace.WriteLine("Adding a new line..");
             lock (LogLock)
             {
-                if (_buffer.Count + 1 > _client.Config.BufferLimit)
+                if (_buffer.Count + 1 > _client.Configuration.BufferLimit)
                 {
                     Trace.WriteLine("Buffer reaching limit: remove earliest item..");
                     _buffer.RemoveAt(0);
@@ -78,7 +78,7 @@ namespace RedBear.LogDNA
 
                 _buffer.Add(line);
 
-                if (_buffer.Count >= _client.Config.FlushLimit)
+                if (_buffer.Count >= _client.Configuration.FlushLimit)
                 {
                     Trace.WriteLine("Buffer has reached flush limit.");
                     Flush();

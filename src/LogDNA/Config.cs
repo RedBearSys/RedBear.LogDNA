@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json;
 
@@ -53,26 +54,19 @@ namespace RedBear.LogDNA
         /// </value>
         public int BufferLimit { get; set; }
         /// <summary>
-        /// Gets or sets the name of the application that's emitting the content that's sent to LogDNA.
-        /// </summary>
-        /// <value>
-        /// The name of the application.
-        /// </value>
-        public string ApplicationName { get; set; }
-        /// <summary>
         /// Gets or sets the LogDNA key.
         /// </summary>
         /// <value>
         /// The key.
         /// </value>
-        public string Key { get; set; }
+        public string IngestionKey { get; set; }
         /// <summary>
         /// Gets or sets the tags used for dynamic grouping.
         /// </summary>
         /// <value>
         /// The tags.
         /// </value>
-        public List<string> Tags { get; set; }
+        public IEnumerable<string> Tags { get; set; }
 
         /// <summary>
         /// Gets all the tags in a comma-separated string.
@@ -81,7 +75,7 @@ namespace RedBear.LogDNA
         /// All tags.
         /// </value>
         [JsonProperty("tags")]
-        public string AllTags => Tags.Count > 0 ? string.Join(",", Tags) : null;
+        public string AllTags => Tags.Any() ? string.Join(",", Tags) : null;
 
         /// <summary>
         /// Gets the name of the host. By default, this is the machine name, but it can be overridden.
@@ -222,10 +216,9 @@ namespace RedBear.LogDNA
         /// </value>
         public bool LogServerSsl { get; set; }
 
-        public Config(string applicationName, string key)
+        public Config(string ingestionIngestionKey)
         {
-            ApplicationName = applicationName;
-            Key = key;
+            IngestionKey = ingestionIngestionKey;
             AuthFailDelay = 900000;
             FlushInterval = 250;
             FlushLimit = 5000;
