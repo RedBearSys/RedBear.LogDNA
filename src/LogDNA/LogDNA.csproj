@@ -12,6 +12,7 @@
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
     <PackageIconUrl>https://avatars3.githubusercontent.com/u/17988342?v=3&amp;amp;amp;s=200</PackageIconUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>.NET Standard LogDNA client</Description>
   </PropertyGroup>
 
   <ItemGroup>
