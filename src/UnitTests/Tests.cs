@@ -6,11 +6,11 @@ namespace UnitTests
 {
     public class Tests
     {
-        [Fact]
+        //[Fact]
         // ReSharper disable once InconsistentNaming
         public async void AppearsInLogDNA()
         {
-            var config = new Config("MyApp", "92a9b668db479870509621dbd354145d");
+            var config = new Config("MyApp", "--KEY--");
 
             var client = new ApiClient();
             await client.ConnectAsync(config);
