@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Timers;
 using Newtonsoft.Json;
 
@@ -46,7 +47,7 @@ namespace RedBear.LogDNA
         /// The log lines.
         /// </value>
         [JsonProperty("ls")]
-        public LogLine[] LogLines => _sending.ToArray();
+        public LogLine[] LogLines => _sending.OrderBy(x => x.Timestamp).ToArray();
 
         /// <summary>
         /// Gets or sets a value indicating whether this <see cref="LogLineBuffer"/> is running.
