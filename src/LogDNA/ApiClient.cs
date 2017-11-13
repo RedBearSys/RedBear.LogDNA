@@ -49,7 +49,6 @@ namespace RedBear.LogDNA
 
             if (status != HttpStatusCode.OK)
             {
-                if (_result != null) Trace.WriteLine(_result.ToString());
                 Trace.WriteLine("Auth failed; retry after a delay.");
                 await Task.Delay(Configuration.AuthFailDelay);
                 await ConnectAsync(Configuration);
@@ -128,8 +127,6 @@ namespace RedBear.LogDNA
 
         private void Ws_OnMessage(object sender, MessageEventArgs e)
         {
-            Trace.WriteLine("Message received..");
-
             try
             {
                 var data = JObject.Parse(e.Data);

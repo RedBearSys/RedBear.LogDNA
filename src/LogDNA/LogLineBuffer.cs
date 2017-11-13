@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Timers;
 using Newtonsoft.Json;
@@ -68,12 +67,10 @@ namespace RedBear.LogDNA
         /// <param name="line">The line.</param>
         public void AddLine(LogLine line)
         {
-            Trace.WriteLine("Adding a new line..");
             lock (LogLock)
             {
                 if (_buffer.Count + 1 > _client.Configuration.BufferLimit)
                 {
-                    Trace.WriteLine("Buffer reaching limit: remove earliest item..");
                     _buffer.RemoveAt(0);
                 }
 
@@ -81,7 +78,6 @@ namespace RedBear.LogDNA
 
                 if (_buffer.Count >= _client.Configuration.FlushLimit)
                 {
-                    Trace.WriteLine("Buffer has reached flush limit.");
                     Flush();
                 }
             }
@@ -92,8 +88,6 @@ namespace RedBear.LogDNA
         /// </summary>
         public void Flush()
         {
-            Trace.WriteLine("Flushing..");
-
             if (_client.Active && !_flushing && Running && _buffer.Count > 0)
             {
                 lock (FlushLock)
