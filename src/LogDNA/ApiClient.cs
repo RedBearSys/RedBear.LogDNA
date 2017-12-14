@@ -78,15 +78,14 @@ namespace RedBear.LogDNA
                     try
                     {
                         Active = false;
-                        _ws.Close();
+                        if (_ws.ReadyState != WebSocketState.Closed)
+                            _ws.Close();
                     }
                     catch (Exception)
                     {
                         // Do Nothing
                     }
                 }
-
-                Active = true;
 
                 var protocol = "ws";
                 if (Configuration.LogServerSsl) protocol += "s";
@@ -103,6 +102,8 @@ namespace RedBear.LogDNA
                 _ws.OnError += Ws_OnError;
                 _ws.OnMessage += Ws_OnMessage;
                 _ws.Connect();
+
+                Active = true;
             }
             catch (Exception ex)
             {
@@ -138,6 +139,9 @@ namespace RedBear.LogDNA
                         break;
                     case "r":
                         ConnectAsync(Configuration).Wait();
+                        break;
+                    case "p":
+                        // Ping Pong
                         break;
                     default:
                         throw new LogDNAException(Resources.UnknownCommand);
@@ -218,6 +222,11 @@ namespace RedBear.LogDNA
         /// <returns>True if the message was transmitted successfully.</returns>
         public bool Send(string message)
         {
+            if (_ws.ReadyState == WebSocketState.Closed)
+            {
+                Reconnect();    
+            }
+
             if (_ws.ReadyState == WebSocketState.Open)
             {
                 try
