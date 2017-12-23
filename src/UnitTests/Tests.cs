@@ -1,5 +1,5 @@
 using RedBear.LogDNA;
-using System.Threading.Tasks;
+using System.Threading;
 using Xunit;
 
 namespace UnitTests
@@ -8,16 +8,18 @@ namespace UnitTests
     {
         //[Fact]
         // ReSharper disable once InconsistentNaming
-        public async void AppearsInLogDNA()
+        public void AppearsInLogDNA()
         {
             var config = new Config("--KEY--");
 
-            var client = new ApiClient();
-            await client.ConnectAsync(config);
+            var client = new ApiClient(config);
+            client.Connect();
 
             client.AddLine(new LogLine("MyLog", "My logged comment"));
 
-            await Task.Delay(2000);
+            Thread.Sleep(2000);
+
+            client.Disconnect();
         }
     }
 }

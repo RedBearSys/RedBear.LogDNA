@@ -1,18 +1,24 @@
-﻿using System.Threading.Tasks;
-
-namespace RedBear.LogDNA
+﻿namespace RedBear.LogDNA
 {
     public interface IApiClient
     {
-        LogLineBuffer Buffer { get; set; }
+        /// <summary>
+        /// Whether the client is connectead to LogDNA.
+        /// </summary>
+        /// <returns></returns>
         bool Active { get; set; }
+
+        /// <summary>
+        /// Log the internal operations of the LogDNA client to the Console window.
+        /// </summary>
+        /// <returns></returns>
+        bool LogInternalsToConsole { get; set; }
 
         /// <summary>
         /// Connects to the LogDNA servers using the specified configuration.
         /// </summary>
-        /// <param name="config">The configuration.</param>
         /// <returns></returns>
-        Task ConnectAsync(Config config);
+        void Connect();
 
         /// <summary>
         /// Disconnects the client from the LogDNA servers.

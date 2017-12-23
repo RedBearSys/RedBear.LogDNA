@@ -45,14 +45,14 @@ namespace RedBear.LogDNA
         /// <value>
         /// The flush limit.
         /// </value>
-        public int FlushLimit { get; set; }
+        //public int FlushLimit { get; set; }
         /// <summary>
         /// Gets or sets the maximum size of the log line buffer.
         /// </summary>
         /// <value>
         /// The buffer limit. Defaults to 10,000 entries.
         /// </value>
-        public int BufferLimit { get; set; }
+        //public int BufferLimit { get; set; }
         /// <summary>
         /// Gets or sets the LogDNA key.
         /// </summary>
@@ -221,8 +221,8 @@ namespace RedBear.LogDNA
             IngestionKey = ingestionIngestionKey;
             AuthFailDelay = 900000;
             FlushInterval = 250;
-            FlushLimit = 5000;
-            BufferLimit = 10000;
+            //FlushLimit = 5000;
+            //BufferLimit = 10000;
             Tags = new List<string>();
             HostName = Environment.MachineName;
         }
