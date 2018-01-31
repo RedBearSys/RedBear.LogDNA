@@ -1,8 +1,13 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
-using Newtonsoft.Json;
+using System.Text;
+using System.Threading;
 
 namespace RedBear.LogDNA
 {
@@ -10,7 +15,7 @@ namespace RedBear.LogDNA
     /// Contains runtime settings for the ApiClient.
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class Config
+    public class ConfigurationManager : IConfigurationManager
     {
         public enum TransportType
         {
@@ -19,12 +24,12 @@ namespace RedBear.LogDNA
         }
 
         /// <summary>
-        /// Gets the transport type. Only websockets is supported.
+        /// Gets the transport type.
         /// </summary>
         /// <value>
-        /// The Websocket transport type.
+        /// The transport type.
         /// </value>
-        public TransportType Transport => TransportType.WebSocket;
+        public TransportType Transport { get; set; }
         /// <summary>
         /// Gets or sets the delay before reconnecting after an authentication failure (in milliseconds).
         /// </summary>
@@ -216,15 +221,100 @@ namespace RedBear.LogDNA
         /// </value>
         public bool LogServerSsl { get; set; }
 
-        public Config(string ingestionIngestionKey)
+        /// <summary>
+        /// Log the internal operations of the LogDNA client to the Console window.
+        /// </summary>
+        /// <returns></returns>
+        public bool LogInternalsToConsole { get; set; }
+
+        /// <summary>
+        /// Returns http:// or https:// depending upon whether SSL is to be used.
+        /// </summary>
+        /// <value>
+        /// The HTTP protocol.
+        /// </value>
+        public string HttpProtocol => LogServerSsl ? "https://" : "http://";
+
+        /// <summary>
+        /// Gets or sets the time to wait (in ms) before retrying a send operation.
+        /// </summary>
+        /// <value>
+        /// The time to wait (in ms) before retrying a send operation.
+        /// </value>
+        public int RetryTimeout { get; set; } = 5000;
+
+        public ConfigurationManager(string ingestionIngestionKey)
         {
             IngestionKey = ingestionIngestionKey;
             AuthFailDelay = 900000;
             FlushInterval = 250;
-            //FlushLimit = 5000;
-            //BufferLimit = 10000;
             Tags = new List<string>();
             HostName = Environment.MachineName;
+            Transport = TransportType.WebSocket;
+        }
+
+        /// <summary>
+        /// Authenticate and initialise logging.
+        /// </summary>
+        public IApiClient Initialise()
+        {
+            var url = new Uri("https://api.logdna.com/authenticate/");
+            var status = HttpStatusCode.Unused;
+
+            while (status != HttpStatusCode.OK)
+            {
+                JObject result;
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = url;
+                    client.DefaultRequestHeaders.Add("User-Agent", UserAgent);
+
+                    var response = client.PostAsync(IngestionKey,
+                        new StringContent(JsonConvert.SerializeObject(this), Encoding.UTF8, "application/json")).Result;
+
+                    result = response.IsSuccessStatusCode
+                        ? JObject.Parse(response.Content.ReadAsStringAsync().Result)
+                        : null;
+
+                    status = response.StatusCode;
+                }
+
+                if (status != HttpStatusCode.OK)
+                {
+                    InternalLogger("Auth failed; retry after a delay.");
+                    Thread.Sleep(AuthFailDelay);
+                }
+
+                if (status == HttpStatusCode.OK && result?["apiserver"] != null && result["apiserver"].ToString() != url.Host)
+                {
+                    if (result["ssl"].ToString() == "true")
+                    {
+                        url = new Uri($"https://{result["apiserver"]}/authenticate/");
+                        status = HttpStatusCode.Unused;
+                    }
+                }
+
+                if (result != null)
+                {
+                    AuthToken = result["token"].ToString();
+                    LogServer = result["server"].ToString();
+                    LogServerPort = result["port"].Value<int>();
+                    LogServerSsl = result["ssl"].Value<bool>();
+
+                    if (result["transport"].Value<string>() == "http")
+                        Transport = TransportType.Http;
+                }
+            }
+
+            return Transport == TransportType.WebSocket
+                ? (IApiClient) new SocketApiClient(this)
+                : new HttpApiClient(this);
+        }
+        
+        private void InternalLogger(string message)
+        {
+            if (LogInternalsToConsole)
+                Console.WriteLine(message);
         }
     }
 }

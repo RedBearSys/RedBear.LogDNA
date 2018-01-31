@@ -9,12 +9,6 @@
         bool Active { get; set; }
 
         /// <summary>
-        /// Log the internal operations of the LogDNA client to the Console window.
-        /// </summary>
-        /// <returns></returns>
-        bool LogInternalsToConsole { get; set; }
-
-        /// <summary>
         /// Connects to the LogDNA servers using the specified configuration.
         /// </summary>
         /// <returns></returns>

@@ -6,8 +6,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Timers;
 using WebSocketSharp;
@@ -18,16 +16,15 @@ namespace RedBear.LogDNA
     /// <summary>
     /// Main class for communicating with the LogDNA servers.
     /// </summary>
-    public class ApiClient : IApiClient
+    public class SocketApiClient : IApiClient
     {
-        private JObject _result;
         private WebSocket _ws;
         private int _connectionAttempt;
 
         private readonly ConcurrentQueue<LogLine> _buffer = new ConcurrentQueue<LogLine>();
         private readonly ConcurrentDictionary<string, int> _flags = new ConcurrentDictionary<string, int>();
 
-        internal Config Configuration { get; set; }
+        internal ConfigurationManager Configuration { get; set; }
 
         /// <inheritdoc />
         /// <summary>
@@ -36,20 +33,13 @@ namespace RedBear.LogDNA
         /// <returns></returns>
         public bool Active { get; set; }
 
-        /// <inheritdoc />
-        /// <summary>
-        /// Log the internal operations of the LogDNA client to the Console window.
-        /// </summary>
-        /// <returns></returns>
-        public bool LogInternalsToConsole { get; set; }
-
         /// <summary>
         /// Creates a new ApiClient using the specified configuration.
         /// </summary>
-        /// <param name="config">The configuration received from the LogDNA servers</param>
-        public ApiClient(Config config)
+        /// <param name="configurationManager">The configuration received from the LogDNA servers</param>
+        public SocketApiClient(ConfigurationManager configurationManager)
         {
-            Configuration = config;
+            Configuration = configurationManager;
 
             var timer = new Timer(Configuration.FlushInterval);
             timer.Elapsed += _timer_Elapsed;
@@ -67,41 +57,12 @@ namespace RedBear.LogDNA
             {
                 try
                 {
-                    var url = new Uri("https://api.logdna.com/authenticate/");
-                    var status = PostData(url, Configuration);
-
-                    if (status == HttpStatusCode.OK && _result?["apiserver"] != null && _result["apiserver"].ToString() != url.Host)
-                    {
-                        if (_result["ssl"].ToString() == "true")
-                        {
-                            url = new Uri($"https://{_result["apiserver"]}/authenticate/");
-                            status = PostData(url, Configuration);
-                        }
-                    }
-
-                    if (status != HttpStatusCode.OK)
-                    {
-                        InternalLogger("Auth failed; retry after a delay.");
-                        Thread.Sleep(Configuration.AuthFailDelay);
-                        Connect();
-                        return;
-                    }
-
-                    if (_result != null)
-                    {
-                        Configuration.AuthToken = _result["token"].ToString();
-                        Configuration.LogServer = _result["server"].ToString();
-                        Configuration.LogServerPort = _result["port"].Value<int>();
-                        Configuration.LogServerSsl = _result["ssl"].Value<bool>();
-
-                        ConnectSocket();
-                    }
+                    ConnectSocket();
                 }
                 catch (Exception)
                 {
                     EndConnect();
                 }
-
             }
 
         }
@@ -132,7 +93,7 @@ namespace RedBear.LogDNA
 
                 _ws =
                     new WebSocket(
-                        $"{protocol}://{Configuration.LogServer}:{Configuration.LogServerPort}/?auth_token={WebUtility.UrlEncode(Configuration.AuthToken)}&timestamp={DateTime.Now.ToJavaTimestamp()}&compress=1&tailmode=&transport=")
+                        $"{protocol}://{Configuration.LogServer}:{Configuration.LogServerPort}/?auth_token={WebUtility.UrlEncode(Configuration.AuthToken)}&timestamp={DateTime.Now.ToJavaTimestamp()}&compress=1&tailmode=&transport=&hostname={Configuration.HostName}&mac=&ip=&tags={Configuration.AllTags}")
                     {
                         Compression = CompressionMethod.Deflate
                     };
@@ -239,27 +200,7 @@ namespace RedBear.LogDNA
             _connectionAttempt = 0;
             EndConnect();
         }
-
-        private HttpStatusCode PostData(Uri url, Config config)
-        {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = url;
-                client.DefaultRequestHeaders.Add("User-Agent", config.UserAgent);
-
-                var response = client.PostAsync(config.IngestionKey,
-                    new StringContent(JsonConvert.SerializeObject(config), Encoding.UTF8, "application/json")).Result;
-
-                _result = response.IsSuccessStatusCode
-                    ? JObject.Parse(response.Content.ReadAsStringAsync().Result)
-                    : null;
-
-                InternalLogger(_result?.ToString());
-
-                return response.StatusCode;
-            }
-        }
-
+        
         /// <inheritdoc />
         /// <summary>
         /// Sends the specified message directly to the websocket.
@@ -385,7 +326,7 @@ namespace RedBear.LogDNA
 
         private void InternalLogger(string message)
         {
-            if (LogInternalsToConsole)
+            if (Configuration.LogInternalsToConsole)
                 Console.WriteLine(message);
         }
     }
