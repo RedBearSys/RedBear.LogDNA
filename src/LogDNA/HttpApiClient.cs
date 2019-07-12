@@ -75,6 +75,14 @@ namespace RedBear.LogDNA
         public bool Send(string message)
         {
             InternalLogger($"Sending message: \"{message}\"..");
+
+            // We couldn't initialise the connection upon startup - e.g. LogDNA was down.
+            if (string.IsNullOrEmpty(Configuration.LogServer))
+                Reconnect();
+
+            // Still have no valid configuration; can't proceed.
+            if (string.IsNullOrEmpty(Configuration.LogServer))
+                return false;
             
             using (var handler = new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate })
             using (var client = new HttpClient(handler))
@@ -119,6 +127,7 @@ namespace RedBear.LogDNA
                     if (response.StatusCode == HttpStatusCode.Unauthorized)
                     {
                         Reconnect();
+                        return Send(message);
                     }
                 }
             }

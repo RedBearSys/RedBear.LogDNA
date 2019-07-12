@@ -1,6 +1,7 @@
 using RedBear.LogDNA;
 using System;
 using System.Threading;
+// ReSharper disable once RedundantUsingDirective
 using Xunit;
 
 namespace UnitTests

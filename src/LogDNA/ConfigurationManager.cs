@@ -44,20 +44,7 @@ namespace RedBear.LogDNA
         /// The flush interval. Defaults to 250ms.
         /// </value>
         public int FlushInterval { get; set; }
-        /// <summary>
-        /// Gets or sets the number of buffer entries after which a flush should happen automatically.
-        /// </summary>
-        /// <value>
-        /// The flush limit.
-        /// </value>
-        //public int FlushLimit { get; set; }
-        /// <summary>
-        /// Gets or sets the maximum size of the log line buffer.
-        /// </summary>
-        /// <value>
-        /// The buffer limit. Defaults to 10,000 entries.
-        /// </value>
-        //public int BufferLimit { get; set; }
+       
         /// <summary>
         /// Gets or sets the LogDNA key.
         /// </summary>
@@ -250,7 +237,7 @@ namespace RedBear.LogDNA
             FlushInterval = 250;
             Tags = new List<string>();
             HostName = Environment.MachineName;
-            Transport = TransportType.WebSocket;
+            Transport = TransportType.Http;
         }
 
         /// <summary>
@@ -260,8 +247,9 @@ namespace RedBear.LogDNA
         {
             var url = new Uri("https://api.logdna.com/authenticate/");
             var status = HttpStatusCode.Unused;
+            var tries = 0;
 
-            while (status != HttpStatusCode.OK)
+            while (status != HttpStatusCode.OK && tries < 10)
             {
                 JObject result;
                 using (var client = new HttpClient())
@@ -283,6 +271,8 @@ namespace RedBear.LogDNA
                 {
                     InternalLogger("Auth failed; retry after a delay.");
                     Thread.Sleep(AuthFailDelay);
+
+                    tries++;
                 }
 
                 if (status == HttpStatusCode.OK && result?["apiserver"] != null && result["apiserver"].ToString() != url.Host)

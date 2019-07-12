@@ -88,6 +88,14 @@ namespace RedBear.LogDNA
                     }
                 }
 
+                // We couldn't initialise the connection upon startup - e.g. LogDNA was down.
+                if (string.IsNullOrEmpty(Configuration.LogServer))
+                    Configuration.Initialise();
+
+                // Still have no valid configuration; can't proceed.
+                if (string.IsNullOrEmpty(Configuration.LogServer))
+                    return;
+
                 var protocol = "ws";
                 if (Configuration.LogServerSsl) protocol += "s";
 
